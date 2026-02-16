@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { BookOpen, LayoutDashboard, Layers, Settings, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const MODE_KEY = "library_theme_mode_v1";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [themeTemplate, setThemeTemplate] = useState<ThemeTemplate>("classic-neo");
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
 
@@ -129,6 +131,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               Angelito&apos;s Space
             </div>
+
+            {session?.user ? (
+              <button className="brutal-btn text-sm" onClick={() => signOut({ callbackUrl: "/login" })}>
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link href="/login" className="brutal-btn text-sm">
+                  Login
+                </Link>
+                <Link href="/register" className="brutal-btn text-sm">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </header>
         {children}

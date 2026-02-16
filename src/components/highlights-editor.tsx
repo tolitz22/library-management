@@ -1,15 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-export function HighlightsEditor({ initial }: { initial: string[] }) {
+export function HighlightsEditor({ initial, bookId }: { initial: string[]; bookId: string }) {
   const [highlights, setHighlights] = useState<string[]>(initial);
   const [input, setInput] = useState("");
 
-  function addHighlight() {
+  async function addHighlight() {
     const text = input.trim();
     if (!text) return;
+
+    const res = await fetch("/api/highlights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookId, content: text }),
+    });
+
+    if (!res.ok) {
+      toast.error("Failed to add highlight");
+      return;
+    }
+
     setHighlights((prev) => [text, ...prev]);
     setInput("");
   }
@@ -28,7 +41,11 @@ export function HighlightsEditor({ initial }: { initial: string[] }) {
             className="h-11 w-full rounded-xl border-[2px] border-[#1E1E1E] bg-[#fffefc] px-3 text-sm font-medium outline-none shadow-[2px_2px_0_0_#1E1E1E]"
             onKeyDown={(e) => e.key === "Enter" && addHighlight()}
           />
-          <Button onClick={addHighlight} className="bg-[#00C9A7] text-[#1E1E1E]">
+          <Button
+            onClick={addHighlight}
+            iconPath="/templates/demon-slayer/icons/Reminders.png"
+            className="bg-[#00C9A7] text-[#1E1E1E]"
+          >
             Add Highlight
           </Button>
         </div>

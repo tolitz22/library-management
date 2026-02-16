@@ -3,9 +3,10 @@ import { cn } from "@/lib/utils";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "default" | "secondary" | "ghost";
+  iconPath?: string;
 };
 
-export function Button({ className, variant = "default", ...props }: ButtonProps) {
+export function Button({ className, variant = "default", iconPath, children, ...props }: ButtonProps) {
   return (
     <button
       className={cn(
@@ -25,6 +26,20 @@ export function Button({ className, variant = "default", ...props }: ButtonProps
               : "var(--surface)",
       }}
       {...props}
-    />
+    >
+      {iconPath ? (
+        <span
+          className="inline-block h-4 w-4 shrink-0 rounded-sm"
+          style={{
+            backgroundImage: `url(${iconPath})`,
+            backgroundSize: "contain",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+          aria-hidden="true"
+        />
+      ) : null}
+      {children}
+    </button>
   );
 }

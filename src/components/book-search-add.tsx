@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
@@ -26,77 +27,82 @@ function isLikelyIsbn(value: string) {
 
 export function BookSearchAdd({
   onBookAdded,
-  defaultShelf,
+  shelves,
 }: {
   onBookAdded: (book: Book) => void;
-  defaultShelf: string;
+  shelves: string[];
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const hasShelves = shelves.length > 0;
+  const selectedShelf = shelves[0] ?? "";
 
   const hint = useMemo(
     () => "Search by ISBN or keyword. ISBN search will auto-add an item.",
     [],
   );
 
-  function toBook(item: { title: string; author: string; coverUrl?: string; isbn?: string | null }): Book {
-    return {
-      id: `book-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      title: item.title,
-      author: item.author || "Unknown",
-      coverUrl:
-        item.coverUrl ||
-        "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=480&q=80",
-      progress: 0,
-      currentPage: 0,
-      totalPages: 0,
-      status: "queued",
-      tags: item.isbn ? ["ISBN"] : [],
-      shelf: defaultShelf,
-      notes: [],
-      highlights: [],
-      attachments: [],
-    };
-  }
-
   async function runSearch() {
     const value = query.trim();
-    if (!value) return;
+    if (!value || !hasShelves || !selectedShelf) return;
 
     setLoading(true);
     try {
       if (isLikelyIsbn(value)) {
         const isbn = normalize(value);
-        const res = await fetch("/api/books/auto-add", {
+        const res = await fetch("/api/books/isbn-add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isbn }),
+          body: JSON.stringify({ isbn, shelf: selectedShelf }),
         });
 
-        const data = await res.json();
-        if (data.added) {
-          onBookAdded(
-            toBook({
-              title: data.book?.title ?? "Untitled",
-              author: data.book?.author ?? "Unknown",
-              isbn,
-            }),
-          );
+        const data = (await res.json()) as { book?: Book; error?: string };
+        if (res.ok && data.book) {
+          onBookAdded(data.book);
           setQuery("");
           setResults([]);
           toast.success("Added from ISBN");
         } else {
-          toast.message(data.message ?? "Could not auto-add this ISBN.");
+          toast.message(data.error ?? "Could not auto-add this ISBN.");
         }
       } else {
         const res = await fetch(`/api/books/search?q=${encodeURIComponent(value)}`);
-        const data = await res.json();
+        const data = (await res.json()) as { results: SearchResult[] };
         setResults(data.results ?? []);
       }
     } finally {
       setLoading(false);
     }
+  }
+
+  async function addFromResult(item: SearchResult) {
+    if (!selectedShelf) return;
+
+    const res = await fetch("/api/books", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: item.title,
+        author: item.author,
+        shelf: selectedShelf,
+        tags: item.isbn ? ["ISBN"] : [],
+        isbn: item.isbn ?? undefined,
+        imageUrl: item.coverUrl,
+        currentPage: 0,
+        totalPages: 0,
+      }),
+    });
+
+    const data = (await res.json()) as { book?: Book; error?: string };
+    if (!res.ok || !data.book) {
+      toast.error(data.error ?? "Failed to add book");
+      return;
+    }
+
+    onBookAdded(data.book);
+    toast.success(`Added “${item.title}”`);
   }
 
   return (
@@ -105,6 +111,12 @@ export function BookSearchAdd({
         <h3 className="text-3xl font-bold tracking-tight sm:text-4xl">Search for Books</h3>
         <p className="mt-1 text-sm text-zinc-600">Find fast, add instantly.</p>
       </div>
+
+      {!hasShelves ? (
+        <div className="rounded-xl border-[2px] border-[#1E1E1E] bg-[#FFF8DF] p-3 text-sm font-medium shadow-[2px_2px_0_0_#1E1E1E]">
+          Create a collection first before using ISBN search. <Link href="/collections" className="underline">Go to Collections</Link>
+        </div>
+      ) : null}
 
       <div
         className="rounded-2xl border-[2px] p-3 shadow-[4px_4px_0_0_var(--border)]"
@@ -120,15 +132,16 @@ export function BookSearchAdd({
               onKeyDown={(e) => e.key === "Enter" && runSearch()}
               className="h-12 w-full rounded-xl border-[2px] pl-10 pr-3 text-base font-medium outline-none shadow-[2px_2px_0_0_var(--border)] placeholder:text-zinc-400"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--fg)" }}
+              disabled={!hasShelves || !selectedShelf}
             />
           </div>
 
           <Button
             onClick={runSearch}
-            disabled={loading}
+            disabled={loading || !hasShelves || !selectedShelf}
+            iconPath="/templates/demon-slayer/icons/Magnifier.png"
             className="h-12 min-w-36 whitespace-nowrap bg-[#FF6584] leading-none"
           >
-            <Search className="h-4 w-4" />
             {loading ? "Searching..." : "Search"}
           </Button>
         </div>
@@ -153,18 +166,10 @@ export function BookSearchAdd({
 
               <Button
                 variant="ghost"
-                onClick={() => {
-                  onBookAdded(
-                    toBook({
-                      title: item.title,
-                      author: item.author,
-                      coverUrl: item.coverUrl,
-                      isbn: item.isbn,
-                    }),
-                  );
-                  toast.success(`Added “${item.title}”`);
-                }}
+                iconPath="/templates/demon-slayer/icons/Books.png"
+                onClick={() => addFromResult(item)}
                 className="bg-[#00C9A7]"
+                disabled={!selectedShelf}
               >
                 Add
               </Button>

@@ -10,9 +10,13 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
+    "googleapis": "^144.0.0",
     "lucide-react": "^0.462.0",
+    "nanoid": "^5.1.5",
     "next": "16.1.6",
+    "next-auth": "^4.24.11",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.53.2",
@@ -22,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

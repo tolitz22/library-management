@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { BookCard } from "@/components/book-card";
 import { BookForm } from "@/components/book-form";
 import { BookSearchAdd } from "@/components/book-search-add";
@@ -11,44 +12,47 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { Book } from "@/lib/types";
 
-const STORAGE_KEY = "library_books_v1";
-
 type ViewMode = "grid" | "list";
 
-export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
+export function LibraryClient({ initialBooks, initialShelf = "All shelves" }: { initialBooks: Book[]; initialShelf?: string }) {
   const [bookList, setBookList] = useState<Book[]>(initialBooks);
-  const [hydrated, setHydrated] = useState(false);
+  const [shelves, setShelves] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openQuickAdd, setOpenQuickAdd] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [selectedShelf, setSelectedShelf] = useState("All shelves");
+  const [selectedShelf, setSelectedShelf] = useState(initialShelf || "All shelves");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Book[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setBookList(parsed);
+    async function loadData() {
+      try {
+        const [booksRes, shelvesRes] = await Promise.all([
+          fetch("/api/books", { cache: "no-store" }),
+          fetch("/api/shelves", { cache: "no-store" }),
+        ]);
+
+        if (booksRes.ok) {
+          const data = (await booksRes.json()) as { books: Book[] };
+          setBookList(data.books ?? []);
         }
+
+        if (shelvesRes.ok) {
+          const data = (await shelvesRes.json()) as { shelves: string[] };
+          setShelves(data.shelves ?? []);
+        }
+      } catch {
+        toast.error("Unable to load books");
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      // ignore parse/storage errors
-    } finally {
-      setHydrated(true);
     }
+
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookList));
-  }, [bookList, hydrated]);
-
   const shelfOptions = useMemo(() => {
-    const set = new Set(bookList.map((b) => b.shelf).filter(Boolean));
+    const set = new Set<string>([...shelves, ...bookList.map((b) => b.shelf).filter(Boolean)]);
     return Array.from(set);
-  }, [bookList]);
-
-  const defaultShelf = shelfOptions[0] ?? "Desk Stack";
+  }, [bookList, shelves]);
 
   const visibleBooks = useMemo(() => {
     if (selectedShelf === "All shelves") return bookList;
@@ -57,6 +61,23 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
 
   function addBook(book: Book) {
     setBookList((prev) => [book, ...prev]);
+  }
+
+  async function moveBookToShelf(bookId: string, shelf: string) {
+    const res = await fetch(`/api/books/${bookId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shelf }),
+    });
+
+    if (!res.ok) {
+      toast.error("Failed to move book");
+      return;
+    }
+
+    const data = (await res.json()) as { book: Book };
+    setBookList((prev) => prev.map((b) => (b.id === data.book.id ? data.book : b)));
+    toast.success(`Moved to ${shelf}`);
   }
 
   function getProgress(book: Book) {
@@ -68,7 +89,7 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
 
   return (
     <main className="space-y-4">
-      <BookSearchAdd onBookAdded={addBook} defaultShelf={defaultShelf} />
+      <BookSearchAdd onBookAdded={addBook} shelves={shelfOptions} />
 
       <section className="brutal-card flex flex-wrap items-center gap-3">
         <select
@@ -82,7 +103,7 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
           ))}
         </select>
 
-        <Button onClick={() => setOpenQuickAdd(true)}> 
+        <Button onClick={() => setOpenQuickAdd(true)} iconPath="/templates/demon-slayer/icons/Books.png">
           Quick Add / Edit
         </Button>
 
@@ -125,10 +146,14 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
         />
       </Modal>
 
-      {viewMode === "grid" ? (
+      {loading ? (
+        <section className="brutal-card">
+          <p className="text-sm">Loading books...</p>
+        </section>
+      ) : viewMode === "grid" ? (
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {visibleBooks.map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCard key={book.id} book={book} shelves={shelfOptions} onMoveShelf={moveBookToShelf} />
           ))}
         </section>
       ) : (
@@ -153,6 +178,18 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
                   <span>{getProgress(book)}%</span>
                 </div>
                 <Progress value={getProgress(book)} />
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <select
+                  className="brutal-input max-w-56"
+                  value={book.shelf}
+                  onChange={(e) => moveBookToShelf(book.id, e.target.value)}
+                >
+                  {shelfOptions.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
               </div>
             </article>
           ))}

@@ -1,0 +1,147 @@
+import { google } from "googleapis";
+
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const SERVICE_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const SERVICE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+function assertEnv() {
+  if (!SHEET_ID || !SERVICE_EMAIL || !SERVICE_KEY) {
+    throw new Error("Missing Google Sheets env vars");
+  }
+}
+
+async function getSheetsApi() {
+  assertEnv();
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: SERVICE_EMAIL,
+      private_key: SERVICE_KEY,
+    },
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  return google.sheets({ version: "v4", auth });
+}
+
+function q(name: string) {
+  return `'${name.replace(/'/g, "''")}'`;
+}
+
+export async function ensureSheet(sheetName: string, headers: string[]) {
+  const sheets = await getSheetsApi();
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const exists = (meta.data.sheets ?? []).some((s) => s.properties?.title === sheetName);
+
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: sheetName } } }],
+      },
+    });
+  }
+
+  const headerRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${q(sheetName)}!1:1`,
+  });
+  const current = headerRes.data.values?.[0] ?? [];
+
+  if (current.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${q(sheetName)}!1:1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [headers] },
+    });
+  }
+}
+
+export async function getRows<T extends Record<string, string>>(sheetName: string): Promise<T[]> {
+  const sheets = await getSheetsApi();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${q(sheetName)}!A:Z`,
+  });
+
+  const values = res.data.values ?? [];
+  if (values.length === 0) return [];
+
+  const [header, ...rows] = values;
+  return rows.map((row) => {
+    const obj: Record<string, string> = {};
+    header.forEach((key, i) => {
+      obj[key] = row[i] ?? "";
+    });
+    return obj as T;
+  });
+}
+
+export async function appendRow(sheetName: string, row: Record<string, string>) {
+  const sheets = await getSheetsApi();
+  const existing = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${q(sheetName)}!1:1`,
+  });
+
+  const header = existing.data.values?.[0] ?? [];
+  if (!header.length) throw new Error(`Sheet ${sheetName} is missing header row`);
+
+  const values = header.map((key) => row[key] ?? "");
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: `${q(sheetName)}!A:Z`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [values] },
+  });
+}
+
+export async function findRows<T extends Record<string, string>>(
+  sheetName: string,
+  predicate: (row: T) => boolean,
+) {
+  const rows = await getRows<T>(sheetName);
+  return rows.filter(predicate);
+}
+
+export async function updateRowById(
+  sheetName: string,
+  idField: string,
+  id: string,
+  patch: Record<string, string>,
+) {
+  const sheets = await getSheetsApi();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${q(sheetName)}!A:Z`,
+  });
+
+  const values = res.data.values ?? [];
+  if (!values.length) throw new Error(`Sheet ${sheetName} is empty`);
+
+  const header = values[0];
+  const idIndex = header.indexOf(idField);
+  if (idIndex === -1) throw new Error(`id field ${idField} not found in ${sheetName}`);
+
+  const rowIndex = values.findIndex((row, idx) => idx > 0 && row[idIndex] === id);
+  if (rowIndex === -1) return false;
+
+  const current = values[rowIndex] ?? [];
+  const next = [...current];
+  header.forEach((key, idx) => {
+    if (patch[key] !== undefined) {
+      next[idx] = patch[key];
+    }
+  });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${q(sheetName)}!A${rowIndex + 1}:Z${rowIndex + 1}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [next] },
+  });
+
+  return true;
+}

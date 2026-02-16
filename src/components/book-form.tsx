@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,84 +22,84 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function BookForm({
-  shelves,
   onBookSaved,
+  shelves,
 }: {
-  shelves: string[];
   onBookSaved: (book: Book) => void;
+  shelves: string[];
 }) {
   const [saved, setSaved] = useState(false);
   const hasShelves = shelves.length > 0;
 
-  const { register, handleSubmit, watch, formState, reset } = useForm<FormValues>({
+  const { register, handleSubmit, formState, reset, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { shelf: "", title: "", author: "", tags: "", summary: "" },
+    defaultValues: { title: "", author: "", shelf: "", tags: "", summary: "" },
   });
 
   const selectedShelf = watch("shelf");
-  const canSave = hasShelves && !!selectedShelf && !formState.isSubmitting;
 
   const onSubmit = async (values: FormValues) => {
-    if (!canSave) return;
+    if (formState.isSubmitting || !hasShelves) return;
 
     const tags = (values.tags ?? "")
       .split(",")
       .map((x) => x.trim())
       .filter(Boolean);
 
-    onBookSaved({
-      id: `book-${Date.now()}`,
-      title: values.title,
-      author: values.author,
-      coverUrl:
-        "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=480&q=80",
-      progress: 0,
-      currentPage: 0,
-      totalPages: 0,
-      status: "queued",
-      tags,
-      shelf: values.shelf,
-      summary: values.summary,
-      notes: [],
-      highlights: [],
-      attachments: [],
+    const res = await fetch("/api/books", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: values.title,
+        author: values.author,
+        tags,
+        summary: values.summary,
+        shelf: values.shelf,
+        currentPage: 0,
+        totalPages: 0,
+      }),
     });
 
-    reset({ shelf: "", title: "", author: "", tags: "", summary: "" });
+    if (!res.ok) {
+      toast.error("Failed to save book");
+      return;
+    }
+
+    const data = (await res.json()) as { book: Book };
+    onBookSaved(data.book);
+
+    reset({ title: "", author: "", shelf: "", tags: "", summary: "" });
     setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    setTimeout(() => setSaved(false), 1200);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold">Add / Edit Book</h3>
+        <h3 className="text-lg font-bold">Quick Add Book</h3>
         {!hasShelves && (
-          <Link href="/collections" className="brutal-btn bg-[#FF6584] px-3 py-1.5 text-sm">
-            Create collection first
+          <Link href="/collections" className="brutal-btn text-sm">
+            Create shelf first
           </Link>
         )}
       </div>
 
-      {!hasShelves && (
+      {!hasShelves ? (
         <div className="rounded-xl border-[2px] border-[#1E1E1E] bg-[#FFF8DF] p-3 text-sm font-medium shadow-[2px_2px_0_0_#1E1E1E]">
-          Step 1: choose or create a shelf/collection. Step 2: fill book details. Step 3: save.
+          You need at least one shelf before adding books.
         </div>
-      )}
+      ) : null}
 
       <div>
-        <label className="mb-1 block text-sm font-semibold">Shelf / Collection</label>
+        <label className="mb-1 block text-sm font-semibold">Shelf</label>
         <select {...register("shelf")} className="brutal-input" disabled={!hasShelves}>
           <option value="">Select shelf</option>
-          {shelves.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          {shelves.map((shelf) => (
+            <option key={shelf} value={shelf}>
+              {shelf}
             </option>
           ))}
         </select>
-        {!selectedShelf && hasShelves && (
-          <p className="mt-1 text-xs font-medium text-[#B42318]">Pick a shelf first before saving.</p>
-        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -119,15 +120,15 @@ export function BookForm({
 
       <div>
         <label className="mb-1 block text-sm font-semibold">Quick Summary</label>
-        <Textarea
-          {...register("summary")}
-          placeholder="What makes this one worth keeping close?"
-          disabled={!hasShelves}
-        />
+        <Textarea {...register("summary")} placeholder="What makes this one worth keeping close?" disabled={!hasShelves} />
       </div>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={!canSave}>
+        <Button
+          type="submit"
+          disabled={formState.isSubmitting || !hasShelves || !selectedShelf}
+          iconPath="/templates/demon-slayer/icons/Books.png"
+        >
           Save Book
         </Button>
         {saved && <p className="text-sm font-medium text-[#00A182]">Saved</p>}

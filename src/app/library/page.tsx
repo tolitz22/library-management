@@ -1,6 +1,10 @@
-import { books } from "@/lib/mock-data";
 import { LibraryClient } from "@/components/library-client";
 
-export default function LibraryPage() {
-  return <LibraryClient initialBooks={books} />;
+export default async function LibraryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ shelf?: string }>;
+}) {
+  const { shelf } = await searchParams;
+  return <LibraryClient initialBooks={[]} initialShelf={shelf ?? "All shelves"} />;
 }

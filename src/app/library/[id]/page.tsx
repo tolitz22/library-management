@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { books as mockBooks } from "@/lib/mock-data";
+import { toast } from "sonner";
 import type { Book } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { NotesEditor } from "@/components/notes-editor";
-import { UploadDropzone } from "@/components/upload-dropzone";
 import { HighlightsEditor } from "@/components/highlights-editor";
 import { Button } from "@/components/ui/button";
-
-const STORAGE_KEY = "library_books_v1";
 
 function calcProgress(currentPage: number, totalPages: number, fallback: number) {
   if (!totalPages || totalPages <= 0) return fallback;
@@ -21,21 +18,22 @@ function calcProgress(currentPage: number, totalPages: number, fallback: number)
 
 export default function BookDetailPage() {
   const params = useParams<{ id: string }>();
-  const [allBooks, setAllBooks] = useState<Book[]>(mockBooks);
+  const [allBooks, setAllBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
   const id = params?.id ?? "";
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Book[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setAllBooks(parsed);
-        }
+    async function load() {
+      const res = await fetch("/api/books", { cache: "no-store" });
+      if (!res.ok) {
+        setLoading(false);
+        return;
       }
-    } catch {
-      // ignore
+      const data = (await res.json()) as { books: Book[] };
+      setAllBooks(data.books ?? []);
+      setLoading(false);
     }
+    load();
   }, []);
 
   const book = useMemo(() => allBooks.find((b) => b.id === id), [allBooks, id]);
@@ -48,11 +46,18 @@ export default function BookDetailPage() {
     setTotalPages(book.totalPages ?? 0);
   }, [book?.id]);
 
+  if (loading) {
+    return (
+      <main className="brutal-card space-y-2">
+        <h1 className="text-xl font-bold">Loading...</h1>
+      </main>
+    );
+  }
+
   if (!book) {
     return (
       <main className="brutal-card space-y-3">
         <h1 className="text-xl font-bold">Book not found</h1>
-        <p className="text-zinc-600">This can happen after refresh if the book was only in temporary state before.</p>
         <Link href="/library" className="brutal-btn w-fit">
           Back to Library
         </Link>
@@ -62,24 +67,26 @@ export default function BookDetailPage() {
 
   const progress = calcProgress(currentPage, totalPages, book.progress);
 
-  function savePageProgress() {
+  async function savePageProgress() {
     const safeCurrent = Math.max(0, currentPage || 0);
     const safeTotal = Math.max(0, totalPages || 0);
-    const nextProgress = calcProgress(safeCurrent, safeTotal, book.progress);
 
-    const updated = allBooks.map((b) =>
-      b.id === book.id
-        ? {
-            ...b,
-            currentPage: safeCurrent,
-            totalPages: safeTotal,
-            progress: nextProgress,
-          }
-        : b,
-    );
+    const res = await fetch(`/api/books/${book.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPage: safeCurrent, totalPages: safeTotal }),
+    });
 
-    setAllBooks(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (!res.ok) {
+      toast.error("Failed to update progress");
+      return;
+    }
+    const data = (await res.json()) as { book: Book };
+
+    setAllBooks((prev) => prev.map((b) => (b.id === book.id ? data.book : b)));
+    setCurrentPage(data.book.currentPage ?? safeCurrent);
+    setTotalPages(data.book.totalPages ?? safeTotal);
+    toast.success("Progress updated");
   }
 
   return (
@@ -122,7 +129,9 @@ export default function BookDetailPage() {
               className="brutal-input"
             />
           </div>
-          <Button onClick={savePageProgress} className="h-11">Update Progress</Button>
+          <Button onClick={savePageProgress} className="h-11" iconPath="/templates/demon-slayer/icons/Clock.png">
+            Update Progress
+          </Button>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -135,11 +144,9 @@ export default function BookDetailPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <NotesEditor />
-        <HighlightsEditor initial={book.highlights} />
+        <NotesEditor bookId={book.id} />
+        <HighlightsEditor bookId={book.id} initial={book.highlights} />
       </section>
-
-      <UploadDropzone />
     </main>
   );
 }

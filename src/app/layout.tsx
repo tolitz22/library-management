@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { AppShell } from "@/components/app-shell";
+import { ShellGate } from "@/components/shell-gate";
+import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
@@ -13,8 +14,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <body>
-        <AppShell>{children}</AppShell>
-        <Toaster richColors position="top-right" />
+        <Providers>
+          <ShellGate>{children}</ShellGate>
+          <Toaster richColors position="top-right" />
+        </Providers>
       </body>
     </html>
   );

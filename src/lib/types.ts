@@ -18,6 +18,8 @@ export type Book = {
   title: string;
   author: string;
   coverUrl: string;
+  imageUrl?: string;
+  isbn?: string;
   progress: number;
   currentPage?: number;
   totalPages?: number;
