@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f7f8fc;
+  --fg: #1e1e1e;
+  --primary: #6c63ff;
+  --secondary: #ff6584;
+  --accent: #00c9a7;
+  --highlight: #ffd93d;
+  --primary-contrast: #ffffff;
+  --secondary-contrast: #ffffff;
+  --highlight-contrast: #1e1e1e;
+  --surface: #ffffff;
+  --muted-surface: #fffefc;
+  --border: #1e1e1e;
+}
+
+:root[data-theme-mode="dark"] {
+  --bg: #15161f;
+  --fg: #f6f7fb;
+  --surface: #1f2130;
+  --muted-surface: #222436;
+  --border: #f6f7fb;
+}
+
+:root[data-theme-template="jake"] {
+  --primary: #ff9f1c;
+  --secondary: #2ec4b6;
+  --accent: #e71d36;
+  --highlight: #ffd166;
+  --primary-contrast: #1e1e1e;
+  --secondary-contrast: #1e1e1e;
+  --highlight-contrast: #1e1e1e;
+}
+
+:root[data-theme-template="spongebob"] {
+  --primary: #ffd400;
+  --secondary: #00a6fb;
+  --accent: #ff5d8f;
+  --highlight: #7bd389;
+  --primary-contrast: #1e1e1e;
+  --secondary-contrast: #ffffff;
+  --highlight-contrast: #1e1e1e;
+}
+
+:root[data-theme-template="classic-neo"] {
+  --primary: #6c63ff;
+  --secondary: #ff6584;
+  --accent: #00c9a7;
+  --highlight: #ffd93d;
+  --primary-contrast: #ffffff;
+  --secondary-contrast: #ffffff;
+  --highlight-contrast: #1e1e1e;
+}
+
+:root[data-theme-template="naruto"] {
+  --primary: #ff6b00;
+  --secondary: #1f3a93;
+  --accent: #e63946;
+  --highlight: #ffd166;
+  --primary-contrast: #ffffff;
+  --secondary-contrast: #ffffff;
+  --highlight-contrast: #1e1e1e;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--primary) 12%, transparent) 0, color-mix(in srgb, var(--primary) 12%, transparent) 16%, transparent 16.5%),
+    radial-gradient(circle at 86% 16%, color-mix(in srgb, var(--secondary) 12%, transparent) 0, color-mix(in srgb, var(--secondary) 12%, transparent) 13%, transparent 13.5%),
+    var(--bg);
+  color: var(--fg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer components {
+  .brutal-card {
+    @apply rounded-2xl border-[2px] p-4 shadow-[4px_4px_0_0_var(--border)] transition-all hover:-translate-y-[1px] hover:shadow-[5px_5px_0_0_var(--border)];
+    background: var(--surface);
+  }
+
+  .brutal-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border-[2px] px-4 py-2 font-semibold shadow-[4px_4px_0_0_var(--border)] transition-all hover:-rotate-1 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0_0_var(--border)] active:rotate-0 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[1px_1px_0_0_var(--border)];
+    border-color: var(--border);
+    background: var(--primary);
+    color: var(--primary-contrast);
+  }
+
+  .brutal-input {
+    @apply w-full rounded-xl border-[2px] px-3 py-2 outline-none transition-all placeholder:text-zinc-400 focus:translate-x-[1px] focus:translate-y-[1px] focus:shadow-[3px_3px_0_0_var(--border)];
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--fg);
+    box-shadow: 4px 4px 0 0 var(--border);
+  }
+
+  .brutal-badge {
+    @apply inline-flex items-center rounded-xl border-[2px] px-2 py-0.5 text-xs font-semibold shadow-[2px_2px_0_0_var(--border)] transition-transform hover:-rotate-2;
+    border-color: var(--border);
+    background: var(--highlight);
+    color: var(--highlight-contrast);
+  }
+
+  .brutal-modal {
+    @apply rounded-2xl border-[2px] p-6;
+    border-color: var(--border);
+    background: var(--surface);
+    box-shadow: 8px 8px 0 0 var(--border);
+  }
+
+  .playful-surface {
+    @apply relative overflow-hidden;
+    background-image:
+      linear-gradient(transparent 95%, color-mix(in srgb, var(--border) 15%, transparent) 95%),
+      linear-gradient(90deg, transparent 95%, color-mix(in srgb, var(--border) 15%, transparent) 95%);
+    background-size: 20px 20px;
+  }
+
+  .sticker-note {
+    @apply inline-flex items-center rounded-xl border-[2px] px-3 py-1 text-xs font-bold shadow-[3px_3px_0_0_var(--border)] -rotate-2;
+    border-color: var(--border);
+    background: var(--secondary);
+    color: var(--secondary-contrast);
+  }
+}
+
+:root[data-theme-mode="dark"] .text-zinc-500 {
+  color: #b8bfd4 !important;
+}
+
+:root[data-theme-mode="dark"] .text-zinc-600 {
+  color: #d2d7e6 !important;
+}
