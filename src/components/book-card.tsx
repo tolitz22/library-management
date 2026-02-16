@@ -6,6 +6,11 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
 export function BookCard({ book }: { book: Book }) {
+  const progress =
+    book.totalPages && book.totalPages > 0
+      ? Math.max(0, Math.min(100, Math.round(((book.currentPage ?? 0) / book.totalPages) * 100)))
+      : book.progress;
+
   return (
     <article className="brutal-card hover:rotate-[-0.5deg]" style={{ background: "var(--muted-surface)", color: "var(--fg)" }}>
       <div className="relative mb-3 aspect-[3/4] overflow-hidden rounded-xl border-[2px]" style={{ borderColor: "var(--border)" }}>
@@ -26,9 +31,9 @@ export function BookCard({ book }: { book: Book }) {
       <div className="mb-3 space-y-1">
         <div className="flex justify-between text-xs font-medium">
           <span>Progress</span>
-          <span>{book.progress}%</span>
+          <span>{progress}%</span>
         </div>
-        <Progress value={book.progress} />
+        <Progress value={progress} />
       </div>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {book.tags.map((tag) => (

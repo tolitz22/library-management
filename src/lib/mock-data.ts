@@ -10,6 +10,8 @@ export const books: Book[] = [
     coverUrl:
       "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=480&q=80",
     progress: 62,
+    currentPage: 198,
+    totalPages: 320,
     status: "reading",
     tags: ["Habits", "Self-growth"],
     shelf: "Desk Stack",
@@ -40,6 +42,8 @@ export const books: Book[] = [
     coverUrl:
       "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=480&q=80",
     progress: 30,
+    currentPage: 91,
+    totalPages: 304,
     status: "reading",
     tags: ["Focus", "Productivity"],
     shelf: "Weekend Reads",
@@ -54,6 +58,8 @@ export const books: Book[] = [
     coverUrl:
       "https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=480&q=80",
     progress: 100,
+    currentPage: 464,
+    totalPages: 464,
     status: "completed",
     tags: ["Engineering", "Craft"],
     shelf: "Reference",

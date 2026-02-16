@@ -19,6 +19,8 @@ export type Book = {
   author: string;
   coverUrl: string;
   progress: number;
+  currentPage?: number;
+  totalPages?: number;
   status: "reading" | "completed" | "queued";
   tags: string[];
   shelf: string;

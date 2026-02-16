@@ -63,6 +63,26 @@
   --highlight-contrast: #1e1e1e;
 }
 
+:root[data-theme-template="demonslayer"] {
+  --primary: #0f766e;
+  --secondary: #dc2626;
+  --accent: #111827;
+  --highlight: #f59e0b;
+  --primary-contrast: #ffffff;
+  --secondary-contrast: #ffffff;
+  --highlight-contrast: #1e1e1e;
+}
+
+:root[data-theme-template="onepiece"] {
+  --primary: #dc2626;
+  --secondary: #facc15;
+  --accent: #0f172a;
+  --highlight: #f5e6c8;
+  --primary-contrast: #ffffff;
+  --secondary-contrast: #1e1e1e;
+  --highlight-contrast: #1e1e1e;
+}
+
 * {
   border-color: var(--border);
 }

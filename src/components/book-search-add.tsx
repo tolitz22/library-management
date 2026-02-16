@@ -49,6 +49,8 @@ export function BookSearchAdd({
         item.coverUrl ||
         "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=480&q=80",
       progress: 0,
+      currentPage: 0,
+      totalPages: 0,
       status: "queued",
       tags: item.isbn ? ["ISBN"] : [],
       shelf: defaultShelf,

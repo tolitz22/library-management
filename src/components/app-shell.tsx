@@ -15,7 +15,13 @@ const nav = [
   { href: "/billing", label: "Billing", icon: CreditCard },
 ];
 
-type ThemeTemplate = "classic-neo" | "jake" | "spongebob" | "naruto";
+type ThemeTemplate =
+  | "classic-neo"
+  | "jake"
+  | "spongebob"
+  | "naruto"
+  | "demonslayer"
+  | "onepiece";
 type ThemeMode = "light" | "dark";
 
 const TEMPLATE_KEY = "library_theme_template_v1";
@@ -103,6 +109,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <option value="jake">Jake Adventure Time</option>
               <option value="spongebob">SpongeBob</option>
               <option value="naruto">Naruto</option>
+              <option value="demonslayer">Demon Slayer</option>
+              <option value="onepiece">One Piece</option>
             </select>
 
             <select

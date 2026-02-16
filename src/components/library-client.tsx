@@ -59,6 +59,13 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
     setBookList((prev) => [book, ...prev]);
   }
 
+  function getProgress(book: Book) {
+    if (book.totalPages && book.totalPages > 0) {
+      return Math.max(0, Math.min(100, Math.round(((book.currentPage ?? 0) / book.totalPages) * 100)));
+    }
+    return book.progress;
+  }
+
   return (
     <main className="space-y-4">
       <BookSearchAdd onBookAdded={addBook} defaultShelf={defaultShelf} />
@@ -143,9 +150,9 @@ export function LibraryClient({ initialBooks }: { initialBooks: Book[] }) {
               <div className="mt-3 space-y-1">
                 <div className="flex justify-between text-xs font-medium">
                   <span>Progress</span>
-                  <span>{book.progress}%</span>
+                  <span>{getProgress(book)}%</span>
                 </div>
-                <Progress value={book.progress} />
+                <Progress value={getProgress(book)} />
               </div>
             </article>
           ))}
