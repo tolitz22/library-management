@@ -37,6 +37,8 @@ export function rowToBook(row: BookRow): Book {
     notes: [],
     highlights: [],
     attachments: [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 

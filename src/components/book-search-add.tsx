@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -102,6 +102,8 @@ export function BookSearchAdd({
     }
 
     onBookAdded(data.book);
+    setQuery("");
+    setResults([]);
     toast.success(`Added “${item.title}”`);
   }
 
@@ -139,9 +141,9 @@ export function BookSearchAdd({
           <Button
             onClick={runSearch}
             disabled={loading || !hasShelves || !selectedShelf}
-            iconPath="/templates/demon-slayer/icons/Magnifier.png"
             className="h-12 min-w-36 whitespace-nowrap bg-[#FF6584] leading-none"
           >
+            <Search className="h-4 w-4" />
             {loading ? "Searching..." : "Search"}
           </Button>
         </div>
@@ -166,11 +168,11 @@ export function BookSearchAdd({
 
               <Button
                 variant="ghost"
-                iconPath="/templates/demon-slayer/icons/Books.png"
                 onClick={() => addFromResult(item)}
                 className="bg-[#00C9A7]"
                 disabled={!selectedShelf}
               >
+                <Plus className="h-4 w-4" />
                 Add
               </Button>
             </li>

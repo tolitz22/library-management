@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { FolderPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -99,7 +100,10 @@ export function CollectionsClient() {
         <h3 className="text-lg font-bold">Create Shelf</h3>
         <div className="flex gap-2">
           <Input value={newShelf} onChange={(e) => setNewShelf(e.target.value)} placeholder="e.g. Weekend Reads" />
-          <Button onClick={createShelf}>Create</Button>
+          <Button onClick={createShelf}>
+            <FolderPlus className="h-4 w-4" />
+            Create
+          </Button>
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,8 @@ export function NotesEditor({ bookId }: { bookId: string }) {
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-zinc-500">Tip: keep each note short and scannable.</p>
-        <Button iconPath="/templates/demon-slayer/icons/Notes.png" onClick={saveNote}>
+        <Button onClick={saveNote}>
+          <Save className="h-4 w-4" />
           Save Note
         </Button>
       </div>

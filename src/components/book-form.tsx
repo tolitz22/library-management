@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { BookPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,8 +128,8 @@ export function BookForm({
         <Button
           type="submit"
           disabled={formState.isSubmitting || !hasShelves || !selectedShelf}
-          iconPath="/templates/demon-slayer/icons/Books.png"
         >
+          <BookPlus className="h-4 w-4" />
           Save Book
         </Button>
         {saved && <p className="text-sm font-medium text-[#00A182]">Saved</p>}

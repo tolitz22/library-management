@@ -9,10 +9,12 @@ export function BookCard({
   book,
   shelves,
   onMoveShelf,
+  onOpenBook,
 }: {
   book: Book;
   shelves?: string[];
   onMoveShelf?: (bookId: string, shelf: string) => void;
+  onOpenBook?: (bookId: string) => void;
 }) {
   const progress =
     book.totalPages && book.totalPages > 0
@@ -70,7 +72,7 @@ export function BookCard({
         </div>
       ) : null}
 
-      <Link href={`/library/${book.id}`} className="brutal-btn w-full text-sm">
+      <Link href={`/library/${book.id}`} onClick={() => onOpenBook?.(book.id)} className="brutal-btn w-full text-sm">
         Open book
       </Link>
     </article>

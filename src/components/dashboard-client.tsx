@@ -69,16 +69,6 @@ export function DashboardClient() {
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-xl font-bold">Keep reading momentum</h3>
           <Link href="/library" className="brutal-btn inline-flex items-center gap-2">
-            <span
-              className="inline-block h-4 w-4"
-              style={{
-                backgroundImage: "url('/templates/demon-slayer/icons/Books.png')",
-                backgroundSize: "contain",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }}
-              aria-hidden="true"
-            />
             Open library
           </Link>
         </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Clock3, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Book } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { NotesEditor } from "@/components/notes-editor";
 import { HighlightsEditor } from "@/components/highlights-editor";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 
 function calcProgress(currentPage: number, totalPages: number, fallback: number) {
   if (!totalPages || totalPages <= 0) return fallback;
@@ -18,8 +20,11 @@ function calcProgress(currentPage: number, totalPages: number, fallback: number)
 
 export default function BookDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const id = params?.id ?? "";
 
   useEffect(() => {
@@ -89,6 +94,23 @@ export default function BookDetailPage() {
     toast.success("Progress updated");
   }
 
+  async function confirmDeleteBook() {
+    setDeleting(true);
+    const res = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
+    setDeleting(false);
+
+    if (!res.ok) {
+      toast.error("Failed to delete book");
+      return;
+    }
+
+    toast.success("Book deleted");
+    window.dispatchEvent(new Event("books-updated"));
+    setConfirmOpen(false);
+    router.push("/library");
+    router.refresh();
+  }
+
   return (
     <main className="space-y-4">
       <section className="brutal-card space-y-3">
@@ -129,9 +151,16 @@ export default function BookDetailPage() {
               className="brutal-input"
             />
           </div>
-          <Button onClick={savePageProgress} className="h-11" iconPath="/templates/demon-slayer/icons/Clock.png">
-            Update Progress
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={savePageProgress} className="h-11">
+              <Clock3 className="h-4 w-4" />
+              Update Progress
+            </Button>
+            <Button onClick={() => setConfirmOpen(true)} className="h-11" style={{ background: "#dc2626", color: "#fff" }}>
+              <Trash2 className="h-4 w-4" />
+              Delete Book
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -147,6 +176,22 @@ export default function BookDetailPage() {
         <NotesEditor bookId={book.id} />
         <HighlightsEditor bookId={book.id} initial={book.highlights} />
       </section>
+
+      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Delete book?">
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600">
+            This will permanently delete <span className="font-semibold">{book.title}</span> and all related notes/highlights.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDeleteBook} disabled={deleting} style={{ background: "#dc2626", color: "#fff" }}>
+              {deleting ? "Deleting..." : "Yes, delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
 }

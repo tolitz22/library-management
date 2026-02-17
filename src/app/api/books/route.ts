@@ -5,6 +5,7 @@ import { appendRow, findRows } from "@/lib/sheets";
 import { bookToRow, rowToBook, type BookRow } from "@/lib/mappers";
 import { requireUserId } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { clearCachedUserBooks, getCachedUserBooks, setCachedUserBooks } from "@/lib/books-cache";
 
 const createSchema = z.object({
   title: z.string().min(1),
@@ -18,13 +19,35 @@ const createSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   const userId = await requireUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const shelf = (searchParams.get("shelf") ?? "All shelves").trim();
+  const limitParam = searchParams.get("limit");
+  const offsetParam = searchParams.get("offset");
+
+  const limit = limitParam ? Math.max(1, Math.min(Number(limitParam), 100)) : null;
+  const offset = offsetParam ? Math.max(0, Number(offsetParam)) : 0;
+
   try {
-    const rows = await findRows<BookRow>("books", (row) => row.userId === userId);
-    return NextResponse.json({ books: rows.map(rowToBook) });
+    let rows = getCachedUserBooks(userId);
+    if (!rows) {
+      rows = await findRows<BookRow>("books", (row) => row.userId === userId);
+      setCachedUserBooks(userId, rows);
+    }
+
+    const filtered = shelf === "All shelves" ? rows : rows.filter((row) => row.shelf === shelf);
+    const total = filtered.length;
+    const paged = limit ? filtered.slice(offset, offset + limit) : filtered;
+
+    return NextResponse.json({
+      books: paged.map(rowToBook),
+      total,
+      limit: limit ?? total,
+      offset,
+    });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch books", detail: String(error) }, { status: 500 });
   }
@@ -66,6 +89,7 @@ export async function POST(req: Request) {
     };
 
     await appendRow("books", row);
+    clearCachedUserBooks(userId);
     return NextResponse.json({ book: rowToBook(row as BookRow) });
   } catch (error) {
     return NextResponse.json({ error: "Failed to create book", detail: String(error) }, { status: 500 });

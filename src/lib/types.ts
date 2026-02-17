@@ -30,4 +30,6 @@ export type Book = {
   notes: Note[];
   highlights: string[];
   attachments: Attachment[];
+  createdAt?: string;
+  updatedAt?: string;
 };

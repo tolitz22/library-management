@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { appendRow } from "@/lib/sheets";
 import { rowToBook, type BookRow } from "@/lib/mappers";
+import { clearCachedUserBooks } from "@/lib/books-cache";
 import { requireUserId } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
     };
 
     await appendRow("books", row);
+    clearCachedUserBooks(userId);
     return NextResponse.json({ book: rowToBook(row) });
   } catch (error) {
     return NextResponse.json({ error: "Failed to add ISBN book", detail: String(error) }, { status: 500 });

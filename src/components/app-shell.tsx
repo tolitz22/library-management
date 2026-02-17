@@ -5,15 +5,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { BookOpen, LayoutDashboard, Layers, Settings, CreditCard } from "lucide-react";
+import { BookOpen, LayoutDashboard, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/library", label: "Library", icon: BookOpen },
   { href: "/collections", label: "Collections", icon: Layers },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/billing", label: "Billing", icon: CreditCard },
 ];
 
 type ThemeTemplate =
@@ -25,6 +23,12 @@ type ThemeTemplate =
   | "onepiece";
 type ThemeMode = "light" | "dark";
 
+type SidebarBook = {
+  id: string;
+  title: string;
+  author: string;
+};
+
 const TEMPLATE_KEY = "library_theme_template_v1";
 const MODE_KEY = "library_theme_mode_v1";
 
@@ -33,6 +37,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const [themeTemplate, setThemeTemplate] = useState<ThemeTemplate>("classic-neo");
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
+
+  const [bookQuery, setBookQuery] = useState("");
+  const [bookResults, setBookResults] = useState<SidebarBook[]>([]);
+  const [searchingBooks, setSearchingBooks] = useState(false);
 
   useEffect(() => {
     const savedTemplate = localStorage.getItem(TEMPLATE_KEY) as ThemeTemplate | null;
@@ -46,6 +54,42 @@ export function AppShell({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute("data-theme-template", template);
     document.documentElement.setAttribute("data-theme-mode", mode);
   }, []);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setBookResults([]);
+      return;
+    }
+
+    const q = bookQuery.trim();
+    if (q.length < 2) {
+      setBookResults([]);
+      return;
+    }
+
+    const t = setTimeout(async () => {
+      try {
+        setSearchingBooks(true);
+        const res = await fetch(`/api/books/user-search?q=${encodeURIComponent(q)}&limit=8`, {
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          setBookResults([]);
+          return;
+        }
+
+        const data = (await res.json()) as { books: SidebarBook[] };
+        setBookResults(data.books ?? []);
+      } catch {
+        setBookResults([]);
+      } finally {
+        setSearchingBooks(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(t);
+  }, [bookQuery, session?.user?.id, pathname]);
 
   function onChangeTemplate(next: ThemeTemplate) {
     setThemeTemplate(next);
@@ -73,9 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-2 rounded-xl border-[2px] px-3 py-2 font-medium shadow-[2px_2px_0_0_var(--border)]",
-                  active
-                    ? "-rotate-1"
-                    : "hover:-rotate-1",
+                  active ? "-rotate-1" : "hover:-rotate-1",
                 )}
                 style={{
                   borderColor: "var(--border)",
@@ -89,6 +131,39 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {session?.user && (
+          <section className="mt-4 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Owned books</p>
+            <input
+              className="brutal-input h-9 text-sm"
+              placeholder="Search title/author"
+              value={bookQuery}
+              onChange={(e) => setBookQuery(e.target.value)}
+            />
+
+            {bookQuery.trim().length >= 2 ? (
+              <div className="max-h-56 space-y-1 overflow-auto pr-1">
+                {searchingBooks ? (
+                  <p className="text-xs text-zinc-500">Searching...</p>
+                ) : bookResults.length ? (
+                  bookResults.map((book) => (
+                    <Link
+                      key={book.id}
+                      href={`/library/${book.id}`}
+                      className="block rounded-lg border-[2px] px-2 py-1 text-sm font-medium shadow-[2px_2px_0_0_var(--border)]"
+                      style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--fg)" }}
+                    >
+                      <span className="line-clamp-1">{book.title}</span>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-xs text-zinc-500">No matching books.</p>
+                )}
+              </div>
+            ) : null}
+          </section>
+        )}
       </aside>
 
       <div className="space-y-4">
@@ -129,7 +204,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="rounded-xl border-[2px] px-3 py-2 text-sm font-semibold shadow-[2px_2px_0_0_var(--border)]"
               style={{ borderColor: "var(--border)", background: "var(--highlight)", color: "var(--highlight-contrast)" }}
             >
-              Angelito&apos;s Space
+              {session?.user?.name ? `${session.user.name}'s Space` : "My Space"}
             </div>
 
             {session?.user ? (

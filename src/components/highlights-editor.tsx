@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Highlighter } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -43,9 +44,9 @@ export function HighlightsEditor({ initial, bookId }: { initial: string[]; bookI
           />
           <Button
             onClick={addHighlight}
-            iconPath="/templates/demon-slayer/icons/Reminders.png"
             className="bg-[#00C9A7] text-[#1E1E1E]"
           >
+            <Highlighter className="h-4 w-4" />
             Add Highlight
           </Button>
         </div>
