@@ -13,10 +13,19 @@ export async function GET(req: Request) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("search failed");
 
-    const data = await res.json();
-    const results = (data.docs ?? []).map((doc: any) => ({
-      key: doc.key,
-      title: doc.title,
+    const data = (await res.json()) as {
+      docs?: Array<{
+        key?: string;
+        title?: string;
+        author_name?: string[];
+        isbn?: string[];
+        cover_i?: number;
+      }>;
+    };
+
+    const results = (data.docs ?? []).map((doc) => ({
+      key: doc.key ?? crypto.randomUUID(),
+      title: doc.title ?? "Untitled",
       author: doc.author_name?.[0] ?? "Unknown",
       isbn: doc.isbn?.[0] ?? null,
       coverUrl: doc.cover_i

@@ -9,5 +9,9 @@ export default async function RegisterPage() {
     redirect("/library");
   }
 
-  return <RegisterForm />;
+  return (
+    <div className="px-2 py-3 sm:px-4 sm:py-4">
+      <RegisterForm />
+    </div>
+  );
 }

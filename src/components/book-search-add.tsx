@@ -108,9 +108,9 @@ export function BookSearchAdd({
   }
 
   return (
-    <section className="brutal-card space-y-4">
+    <section className="brutal-card min-w-0 space-y-4 overflow-hidden">
       <div>
-        <h3 className="text-3xl font-bold tracking-tight sm:text-4xl">Search for Books</h3>
+        <h3 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">Search for Books</h3>
         <p className="mt-1 text-sm text-zinc-600">Find fast, add instantly.</p>
       </div>
 
@@ -141,7 +141,7 @@ export function BookSearchAdd({
           <Button
             onClick={runSearch}
             disabled={loading || !hasShelves || !selectedShelf}
-            className="h-12 min-w-36 whitespace-nowrap bg-[#FF6584] leading-none"
+            className="h-12 w-full min-w-0 bg-[#FF6584] leading-none md:w-auto md:min-w-36"
           >
             <Search className="h-4 w-4" />
             {loading ? "Searching..." : "Search"}
@@ -169,7 +169,7 @@ export function BookSearchAdd({
               <Button
                 variant="ghost"
                 onClick={() => addFromResult(item)}
-                className="bg-[#00C9A7]"
+                className="w-full bg-[#00C9A7] sm:w-auto"
                 disabled={!selectedShelf}
               >
                 <Plus className="h-4 w-4" />

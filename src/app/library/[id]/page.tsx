@@ -25,6 +25,7 @@ export default function BookDetailPage() {
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [draftByBook, setDraftByBook] = useState<Record<string, { currentPage: number; totalPages: number }>>({});
   const id = params?.id ?? "";
 
   useEffect(() => {
@@ -42,14 +43,6 @@ export default function BookDetailPage() {
   }, []);
 
   const book = useMemo(() => allBooks.find((b) => b.id === id), [allBooks, id]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-
-  useEffect(() => {
-    if (!book) return;
-    setCurrentPage(book.currentPage ?? 0);
-    setTotalPages(book.totalPages ?? 0);
-  }, [book?.id]);
 
   if (loading) {
     return (
@@ -71,7 +64,30 @@ export default function BookDetailPage() {
   }
 
   const bookId = book.id;
+  const draft = draftByBook[bookId];
+  const currentPage = draft?.currentPage ?? (book.currentPage ?? 0);
+  const totalPages = draft?.totalPages ?? (book.totalPages ?? 0);
   const progress = calcProgress(currentPage, totalPages, book.progress);
+
+  function setCurrentDraft(nextCurrent: number) {
+    setDraftByBook((prev) => ({
+      ...prev,
+      [bookId]: {
+        currentPage: Math.max(0, nextCurrent || 0),
+        totalPages,
+      },
+    }));
+  }
+
+  function setTotalDraft(nextTotal: number) {
+    setDraftByBook((prev) => ({
+      ...prev,
+      [bookId]: {
+        currentPage,
+        totalPages: Math.max(0, nextTotal || 0),
+      },
+    }));
+  }
 
   async function savePageProgress() {
     const safeCurrent = Math.max(0, currentPage || 0);
@@ -90,8 +106,11 @@ export default function BookDetailPage() {
     const data = (await res.json()) as { book: Book };
 
     setAllBooks((prev) => prev.map((b) => (b.id === bookId ? data.book : b)));
-    setCurrentPage(data.book.currentPage ?? safeCurrent);
-    setTotalPages(data.book.totalPages ?? safeTotal);
+    setDraftByBook((prev) => {
+      const next = { ...prev };
+      delete next[bookId];
+      return next;
+    });
     toast.success("Progress updated");
   }
 
@@ -113,7 +132,7 @@ export default function BookDetailPage() {
   }
 
   return (
-    <main className="space-y-4">
+    <main className="min-w-0 space-y-4 overflow-hidden">
       <section className="brutal-card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -131,14 +150,14 @@ export default function BookDetailPage() {
           <Progress value={progress} />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <div className="grid gap-3 md:grid-cols-2 md:items-end">
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-600">Current page</label>
             <input
               type="number"
               min={0}
               value={currentPage}
-              onChange={(e) => setCurrentPage(Number(e.target.value))}
+              onChange={(e) => setCurrentDraft(Number(e.target.value))}
               className="brutal-input"
             />
           </div>
@@ -148,16 +167,16 @@ export default function BookDetailPage() {
               type="number"
               min={1}
               value={totalPages}
-              onChange={(e) => setTotalPages(Number(e.target.value))}
+              onChange={(e) => setTotalDraft(Number(e.target.value))}
               className="brutal-input"
             />
           </div>
-          <div className="flex gap-2">
-            <Button onClick={savePageProgress} className="h-11">
+          <div className="flex flex-col gap-2 md:col-span-2 sm:flex-row sm:flex-wrap">
+            <Button onClick={savePageProgress} className="h-11 w-full sm:w-auto">
               <Clock3 className="h-4 w-4" />
               Update Progress
             </Button>
-            <Button onClick={() => setConfirmOpen(true)} className="h-11" style={{ background: "#dc2626", color: "#fff" }}>
+            <Button onClick={() => setConfirmOpen(true)} className="h-11 w-full sm:w-auto" style={{ background: "#dc2626", color: "#fff" }}>
               <Trash2 className="h-4 w-4" />
               Delete Book
             </Button>
