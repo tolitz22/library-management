@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deleteRowsWhere, findRows, updateRowById } from "@/lib/sheets";
+import { deleteBookRowByIdForUser, deleteRowsWhere, getBookRowByIdForUser, updateBookRowByIdForUser } from "@/lib/sheets";
 import { requireUserId } from "@/lib/server-auth";
 import { rowToBook, type BookRow } from "@/lib/mappers";
 import { clearCachedUserBooks } from "@/lib/books-cache";
@@ -23,8 +23,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
 
-  const rows = await findRows<BookRow>("books", (row) => row.id === id && row.userId === userId);
-  const current = rows[0];
+  const current = await getBookRowByIdForUser<BookRow>(id, userId);
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const nextCurrentPage = parsed.data.currentPage ?? Number(current.currentPage || 0);
@@ -45,11 +44,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (parsed.data.currentPage !== undefined) patch.currentPage = String(parsed.data.currentPage);
   if (parsed.data.totalPages !== undefined) patch.totalPages = String(parsed.data.totalPages);
 
-  await updateRowById("books", "id", id, patch);
+  const ok = await updateBookRowByIdForUser(id, userId, patch);
+  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   clearCachedUserBooks(userId);
 
-  const updatedRows = await findRows<BookRow>("books", (row) => row.id === id && row.userId === userId);
-  return NextResponse.json({ book: rowToBook(updatedRows[0] ?? current) });
+  const updated = await getBookRowByIdForUser<BookRow>(id, userId);
+  return NextResponse.json({ book: rowToBook(updated ?? current) });
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -58,11 +59,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
 
-  const rows = await findRows<BookRow>("books", (row) => row.id === id && row.userId === userId);
-  const current = rows[0];
+  const current = await getBookRowByIdForUser<BookRow>(id, userId);
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const deletedBooks = await deleteRowsWhere<BookRow>("books", (row) => row.id === id && row.userId === userId);
+  const removed = await deleteBookRowByIdForUser(id, userId);
   clearCachedUserBooks(userId);
 
   type NoteRow = { id: string; bookId: string; userId: string; content: string; createdAt: string };
@@ -80,5 +80,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     // ignore if highlights sheet is missing/misconfigured
   }
 
-  return NextResponse.json({ ok: true, deletedBooks });
+  return NextResponse.json({ ok: true, deletedBooks: removed ? 1 : 0 });
 }

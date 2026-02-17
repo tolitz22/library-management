@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
-import { appendRow, findRows } from "@/lib/sheets";
+import { appendRow, getUserRowByEmail } from "@/lib/sheets";
 
 type UserRow = {
   userId: string;
@@ -19,8 +19,8 @@ export async function verifyPassword(password: string, hash: string) {
 }
 
 export async function findUserByEmail(email: string) {
-  const users = await findRows<UserRow>("users", (u) => u.email.toLowerCase() === email.toLowerCase());
-  return users[0] ?? null;
+  const user = await getUserRowByEmail<UserRow>(email);
+  return user ?? null;
 }
 
 export async function createUser({ name, email, password }: { name: string; email: string; password: string }) {

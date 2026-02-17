@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findRows } from "@/lib/sheets";
+import { getBookRowsByUserId } from "@/lib/sheets";
 import { requireUserId } from "@/lib/server-auth";
 import type { BookRow } from "@/lib/mappers";
 import { getCachedUserBooks, setCachedUserBooks } from "@/lib/books-cache";
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   try {
     let rows = getCachedUserBooks(userId);
     if (!rows) {
-      rows = await findRows<BookRow>("books", (row) => row.userId === userId);
+      rows = await getBookRowsByUserId<BookRow>(userId);
       setCachedUserBooks(userId, rows);
     }
 

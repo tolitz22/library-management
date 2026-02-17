@@ -117,6 +117,15 @@ body {
     box-shadow: 4px 4px 0 0 var(--border);
   }
 
+  .brutal-input:-webkit-autofill,
+  .brutal-input:-webkit-autofill:hover,
+  .brutal-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--fg);
+    transition: background-color 9999s ease-in-out 0s;
+    -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset, 4px 4px 0 0 var(--border);
+    box-shadow: 0 0 0px 1000px var(--surface) inset, 4px 4px 0 0 var(--border);
+  }
+
   .brutal-badge {
     @apply inline-flex items-center rounded-xl border-[2px] px-2 py-0.5 text-xs font-semibold shadow-[2px_2px_0_0_var(--border)] transition-transform hover:-rotate-2;
     border-color: var(--border);

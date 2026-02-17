@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { appendRow, findRows } from "@/lib/sheets";
-import { bookToRow, rowToBook, type BookRow } from "@/lib/mappers";
+import { appendRow, getBookRowsByUserId } from "@/lib/sheets";
+import { rowToBook, type BookRow } from "@/lib/mappers";
 import { requireUserId } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { clearCachedUserBooks, getCachedUserBooks, setCachedUserBooks } from "@/lib/books-cache";
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
   try {
     let rows = getCachedUserBooks(userId);
     if (!rows) {
-      rows = await findRows<BookRow>("books", (row) => row.userId === userId);
+      rows = await getBookRowsByUserId<BookRow>(userId);
       setCachedUserBooks(userId, rows);
     }
 

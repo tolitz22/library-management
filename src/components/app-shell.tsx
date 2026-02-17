@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { BookOpen, LayoutDashboard, Layers, Menu, X } from "lucide-react";
+import { Book, LayoutDashboard, Layers, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/library", label: "Library", icon: BookOpen },
+  { href: "/library", label: "Library", icon: Book },
   { href: "/collections", label: "Collections", icon: Layers },
 ];
 
