@@ -70,13 +70,14 @@ export default function BookDetailPage() {
     );
   }
 
+  const bookId = book.id;
   const progress = calcProgress(currentPage, totalPages, book.progress);
 
   async function savePageProgress() {
     const safeCurrent = Math.max(0, currentPage || 0);
     const safeTotal = Math.max(0, totalPages || 0);
 
-    const res = await fetch(`/api/books/${book.id}`, {
+    const res = await fetch(`/api/books/${bookId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ currentPage: safeCurrent, totalPages: safeTotal }),
@@ -88,7 +89,7 @@ export default function BookDetailPage() {
     }
     const data = (await res.json()) as { book: Book };
 
-    setAllBooks((prev) => prev.map((b) => (b.id === book.id ? data.book : b)));
+    setAllBooks((prev) => prev.map((b) => (b.id === bookId ? data.book : b)));
     setCurrentPage(data.book.currentPage ?? safeCurrent);
     setTotalPages(data.book.totalPages ?? safeTotal);
     toast.success("Progress updated");
@@ -96,7 +97,7 @@ export default function BookDetailPage() {
 
   async function confirmDeleteBook() {
     setDeleting(true);
-    const res = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/books/${bookId}`, { method: "DELETE" });
     setDeleting(false);
 
     if (!res.ok) {
