@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { appendRow } from "@/lib/sheets";
+import { appendRow, ensureSheet } from "@/lib/sheets";
 import { requireUserId } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -22,14 +22,20 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
 
-  const row = {
-    id: nanoid(),
-    bookId: parsed.data.bookId,
-    userId,
-    content: parsed.data.content,
-    createdAt: new Date().toISOString(),
-  };
+  try {
+    await ensureSheet("highlights", ["id", "bookId", "userId", "content", "createdAt"]);
 
-  await appendRow("highlights", row);
-  return NextResponse.json({ highlight: row });
+    const row = {
+      id: nanoid(),
+      bookId: parsed.data.bookId,
+      userId,
+      content: parsed.data.content,
+      createdAt: new Date().toISOString(),
+    };
+
+    await appendRow("highlights", row);
+    return NextResponse.json({ highlight: row });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to save highlight", detail: String(error) }, { status: 500 });
+  }
 }

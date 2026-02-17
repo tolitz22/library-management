@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,24 @@ import { Button } from "@/components/ui/button";
 export function NotesEditor({ bookId }: { bookId: string }) {
   const [value, setValue] = useState("");
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadNotes() {
+      const res = await fetch(`/api/notes?bookId=${encodeURIComponent(bookId)}`, { cache: "no-store" });
+      if (!res.ok) return;
+
+      const data = (await res.json()) as { notes?: Array<{ content: string }> };
+      if (cancelled) return;
+      setSavedNotes((data.notes ?? []).map((note) => note.content).filter(Boolean));
+    }
+
+    loadNotes();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId]);
 
   async function saveNote() {
     const trimmed = value.trim();
