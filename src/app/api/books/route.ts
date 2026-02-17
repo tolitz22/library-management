@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { appendRow, getBookRowsByUserId } from "@/lib/sheets";
+import { appendRow, ensureSheet, getBookRowsByUserId } from "@/lib/sheets";
 import { rowToBook, type BookRow } from "@/lib/mappers";
 import { requireUserId } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/rate-limit";
@@ -32,6 +32,25 @@ export async function GET(req: Request) {
   const offset = offsetParam ? Math.max(0, Number(offsetParam)) : 0;
 
   try {
+    await ensureSheet("books", [
+      "id",
+      "userId",
+      "title",
+      "author",
+      "isbn",
+      "imageUrl",
+      "shelf",
+      "tags",
+      "currentPage",
+      "totalPages",
+      "progress",
+      "status",
+      "createdAt",
+      "updatedAt",
+      "borrowedBy",
+      "borrowedAt",
+    ]);
+
     let rows = getCachedUserBooks(userId);
     if (!rows) {
       rows = await getBookRowsByUserId<BookRow>(userId);
@@ -62,6 +81,25 @@ export async function POST(req: Request) {
   if (!rl.ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   try {
+    await ensureSheet("books", [
+      "id",
+      "userId",
+      "title",
+      "author",
+      "isbn",
+      "imageUrl",
+      "shelf",
+      "tags",
+      "currentPage",
+      "totalPages",
+      "progress",
+      "status",
+      "createdAt",
+      "updatedAt",
+      "borrowedBy",
+      "borrowedAt",
+    ]);
+
     const body = await req.json();
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -86,6 +124,8 @@ export async function POST(req: Request) {
       status: progress >= 100 ? "completed" : progress > 0 ? "reading" : "queued",
       createdAt: now,
       updatedAt: now,
+      borrowedBy: "",
+      borrowedAt: "",
     };
 
     await appendRow("books", row);

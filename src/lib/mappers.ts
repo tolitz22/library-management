@@ -15,6 +15,8 @@ export type BookRow = {
   status: string;
   createdAt: string;
   updatedAt: string;
+  borrowedBy?: string;
+  borrowedAt?: string;
 };
 
 export function rowToBook(row: BookRow): Book {
@@ -39,6 +41,8 @@ export function rowToBook(row: BookRow): Book {
     attachments: [],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    borrowedBy: row.borrowedBy || "",
+    borrowedAt: row.borrowedAt || "",
   };
 }
 
@@ -58,5 +62,7 @@ export function bookToRow(book: Book, userId: string): BookRow {
     status: book.status,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    borrowedBy: book.borrowedBy ?? "",
+    borrowedAt: book.borrowedAt ?? "",
   };
 }

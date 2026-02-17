@@ -51,6 +51,11 @@ export function BookCard({
         <Progress value={progress} />
       </div>
       <div className="mb-3 flex flex-wrap gap-1.5">
+        {book.borrowedBy ? (
+          <Badge className="text-xs" style={{ background: "#fde68a", color: "#1f2937" }}>
+            Borrowed: {book.borrowedBy}
+          </Badge>
+        ) : null}
         {book.tags.map((tag) => (
           <Badge key={tag} className="text-xs" style={{ background: "var(--surface)", color: "var(--fg)" }}>
             {tag}

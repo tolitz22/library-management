@@ -32,4 +32,6 @@ export type Book = {
   attachments: Attachment[];
   createdAt?: string;
   updatedAt?: string;
+  borrowedBy?: string;
+  borrowedAt?: string;
 };

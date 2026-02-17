@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deleteBookRowByIdForUser, deleteRowsWhere, getBookRowByIdForUser, updateBookRowByIdForUser } from "@/lib/sheets";
+import { deleteBookRowByIdForUser, deleteRowsWhere, ensureSheet, getBookRowByIdForUser, updateBookRowByIdForUser } from "@/lib/sheets";
 import { requireUserId } from "@/lib/server-auth";
 import { rowToBook, type BookRow } from "@/lib/mappers";
 import { clearCachedUserBooks } from "@/lib/books-cache";
@@ -12,6 +12,8 @@ const patchSchema = z.object({
   totalPages: z.number().optional(),
   progress: z.number().optional(),
   status: z.enum(["queued", "reading", "completed"]).optional(),
+  borrowedBy: z.string().optional(),
+  borrowedAt: z.string().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +21,26 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  await ensureSheet("books", [
+    "id",
+    "userId",
+    "title",
+    "author",
+    "isbn",
+    "imageUrl",
+    "shelf",
+    "tags",
+    "currentPage",
+    "totalPages",
+    "progress",
+    "status",
+    "createdAt",
+    "updatedAt",
+    "borrowedBy",
+    "borrowedAt",
+  ]);
+
   const body = await req.json();
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -43,6 +65,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (parsed.data.tags !== undefined) patch.tags = parsed.data.tags.join(", ");
   if (parsed.data.currentPage !== undefined) patch.currentPage = String(parsed.data.currentPage);
   if (parsed.data.totalPages !== undefined) patch.totalPages = String(parsed.data.totalPages);
+  if (parsed.data.borrowedBy !== undefined || parsed.data.borrowedAt !== undefined) {
+    const borrower = (parsed.data.borrowedBy ?? current.borrowedBy ?? "").trim();
+    patch.borrowedBy = borrower;
+
+    if (!borrower) {
+      patch.borrowedAt = "";
+    } else if (parsed.data.borrowedAt !== undefined) {
+      patch.borrowedAt = parsed.data.borrowedAt;
+    } else {
+      patch.borrowedAt = current.borrowedAt || new Date().toISOString();
+    }
+  }
 
   const ok = await updateBookRowByIdForUser(id, userId, patch);
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });

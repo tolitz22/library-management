@@ -274,6 +274,21 @@ export async function ensureSheet(sheetName: string, headers: string[]) {
       }),
     );
     headerCache.set(sheetName, { headers: [...headers], expiresAt: Date.now() + INDEX_TTL_MS });
+    return;
+  }
+
+  const missing = headers.filter((h) => !current.includes(h));
+  if (missing.length > 0) {
+    const merged = [...current, ...missing];
+    await withRetry(() =>
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${q(sheetName)}!1:1`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [merged] },
+      }),
+    );
+    headerCache.set(sheetName, { headers: merged, expiresAt: Date.now() + INDEX_TTL_MS });
   }
 }
 

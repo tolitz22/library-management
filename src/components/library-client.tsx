@@ -263,7 +263,10 @@ export function LibraryClient({ initialBooks, initialShelf = "All shelves" }: { 
                     {book.author}
                   </p>
                 </div>
-                <Badge className="bg-white">{book.shelf}</Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-white">{book.shelf}</Badge>
+                  {book.borrowedBy ? <Badge style={{ background: "#fde68a", color: "#1f2937" }}>Borrowed: {book.borrowedBy}</Badge> : null}
+                </div>
               </div>
 
               <div className="mt-3 space-y-1">

@@ -18,6 +18,17 @@ function calcProgress(currentPage: number, totalPages: number, fallback: number)
   return Math.max(0, Math.min(100, Math.round((currentPage / totalPages) * 100)));
 }
 
+function toDateInputValue(value?: string) {
+  if (!value) return new Date().toISOString().slice(0, 10);
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
+  return d.toISOString().slice(0, 10);
+}
+
+function fromDateInputValue(value: string) {
+  return `${value}T00:00:00.000Z`;
+}
+
 export default function BookDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -25,6 +36,8 @@ export default function BookDetailPage() {
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [borrowerName, setBorrowerName] = useState("");
+  const [borrowedDate, setBorrowedDate] = useState(toDateInputValue());
   const [draftByBook, setDraftByBook] = useState<Record<string, { currentPage: number; totalPages: number }>>({});
   const id = params?.id ?? "";
 
@@ -43,6 +56,11 @@ export default function BookDetailPage() {
   }, []);
 
   const book = useMemo(() => allBooks.find((b) => b.id === id), [allBooks, id]);
+
+  useEffect(() => {
+    setBorrowerName(book?.borrowedBy ?? "");
+    setBorrowedDate(toDateInputValue(book?.borrowedAt));
+  }, [book?.id, book?.borrowedBy, book?.borrowedAt]);
 
   if (loading) {
     return (
@@ -68,6 +86,7 @@ export default function BookDetailPage() {
   const currentPage = draft?.currentPage ?? (book.currentPage ?? 0);
   const totalPages = draft?.totalPages ?? (book.totalPages ?? 0);
   const progress = calcProgress(currentPage, totalPages, book.progress);
+  const isBorrowed = Boolean((book.borrowedBy ?? "").trim());
 
   function setCurrentDraft(nextCurrent: number) {
     setDraftByBook((prev) => ({
@@ -114,6 +133,25 @@ export default function BookDetailPage() {
     toast.success("Progress updated");
   }
 
+  async function updateBorrower(nextBorrower: string, nextDate: string) {
+    const res = await fetch(`/api/books/${bookId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ borrowedBy: nextBorrower, borrowedAt: fromDateInputValue(nextDate) }),
+    });
+
+    if (!res.ok) {
+      toast.error("Failed to update borrowing status");
+      return;
+    }
+
+    const data = (await res.json()) as { book: Book };
+    setAllBooks((prev) => prev.map((b) => (b.id === bookId ? data.book : b)));
+    setBorrowerName(data.book.borrowedBy ?? "");
+    setBorrowedDate(toDateInputValue(data.book.borrowedAt));
+    toast.success(nextBorrower ? "Borrow info updated" : "Marked as returned");
+  }
+
   async function confirmDeleteBook() {
     setDeleting(true);
     const res = await fetch(`/api/books/${bookId}`, { method: "DELETE" });
@@ -139,7 +177,10 @@ export default function BookDetailPage() {
             <h1 className="text-2xl font-bold">{book.title}</h1>
             <p className="text-zinc-600">{book.author}</p>
           </div>
-          <Badge>{book.shelf}</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge>{book.shelf}</Badge>
+            {isBorrowed ? <Badge style={{ background: "#fde68a", color: "#1f2937" }}>Borrowed</Badge> : null}
+          </div>
         </div>
 
         <div className="space-y-1">
@@ -182,6 +223,49 @@ export default function BookDetailPage() {
             </Button>
           </div>
         </div>
+
+        <div className="grid gap-3 rounded-xl border-[2px] p-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]" style={{ borderColor: "var(--border)" }}>
+          <div className="min-w-0">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-600">Borrowed by</label>
+            <input
+              type="text"
+              value={borrowerName}
+              onChange={(e) => setBorrowerName(e.target.value)}
+              placeholder="Friend name"
+              className="brutal-input"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-600">Date borrowed</label>
+            <input
+              type="date"
+              value={borrowedDate}
+              onChange={(e) => setBorrowedDate(e.target.value)}
+              className="brutal-input"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+            <Button
+              className="h-11 w-full whitespace-nowrap"
+              onClick={() => updateBorrower(borrowerName.trim(), borrowedDate)}
+              disabled={!borrowerName.trim()}
+            >
+              Save borrow info
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-11 w-full whitespace-nowrap"
+              onClick={() => updateBorrower("", borrowedDate)}
+              disabled={!isBorrowed}
+            >
+              Mark returned
+            </Button>
+          </div>
+        </div>
+
+        {book.borrowedAt ? <p className="text-xs text-zinc-500">Borrowed on {new Date(book.borrowedAt).toLocaleDateString()}</p> : null}
 
         <div className="flex flex-wrap gap-2">
           {book.tags.map((tag) => (
