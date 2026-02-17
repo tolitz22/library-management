@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Book, LayoutDashboard, Layers, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -276,6 +277,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               >
                 {session?.user?.name ? `${session.user.name}'s Space` : "My Space"}
               </div>
+
+              <PwaInstallButton />
 
               {session?.user ? (
                 <button className="brutal-btn hidden min-h-11 text-sm lg:inline-flex" onClick={() => signOut({ callbackUrl: "/login" })}>

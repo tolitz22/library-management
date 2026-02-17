@@ -59,3 +59,43 @@ Defined in `src/app/globals.css`:
 ## Notes
 - UI is responsive and intentionally personal (not enterprise-heavy).
 - Keep reading areas mostly white for focus; accent colors are used for actions and highlights.
+
+## PWA
+This app is configured as an installable Progressive Web App (PWA) for production builds.
+
+### Run
+```bash
+npm run dev
+```
+- Service worker registration is disabled in dev to avoid cache confusion.
+
+```bash
+npm run build
+npm run start
+```
+- Service worker is active in production mode.
+
+### Test installability
+1. Open the production app (`npm run start`).
+2. In Chrome/Edge, open the URL and look for **Install app** in the address bar/menu.
+3. Confirm app installs with icon and standalone window.
+
+### Test offline mode
+1. Open app in production mode and navigate a few pages.
+2. DevTools → Network → set **Offline**.
+3. Refresh or navigate.
+4. You should get cached pages/static assets and `/offline` fallback for uncached navigations.
+
+### Service worker update / cache reset
+- Trigger update:
+  1. Deploy new build.
+  2. Reload app once; SW uses `skipWaiting` + `controllerchange` to activate latest worker.
+- Force reset manually:
+  1. DevTools → Application → Service Workers → **Unregister**.
+  2. DevTools → Application → Storage → **Clear site data**.
+  3. Hard refresh.
+
+### Caching policy summary
+- Navigation: network-first with offline fallback (`/offline`).
+- Static assets: stale-while-revalidate.
+- Sensitive API routes (`/api/*`, including auth/session endpoints): not runtime-cached by SW.

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export function Modal({
@@ -14,9 +15,9 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
-  if (!open) return null;
+  if (!open || typeof window === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
       <div className="brutal-modal w-full max-w-2xl">
         <div className="mb-4 flex items-center justify-between">
@@ -27,6 +28,7 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

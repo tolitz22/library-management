@@ -5,5 +5,7 @@ export default function middleware(...args: Parameters<typeof nextAuthMiddleware
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|register).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|login|register|manifest.webmanifest|sw.js|offline|icons).*)",
+  ],
 };
