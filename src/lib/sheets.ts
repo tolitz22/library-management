@@ -2,7 +2,17 @@ import { google } from "googleapis";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SERVICE_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const SERVICE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+function normalizeServiceKey(raw?: string) {
+  if (!raw) return undefined;
+  return raw
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/\\n/g, "\n")
+    .replace(/\r/g, "");
+}
+
+const SERVICE_KEY = normalizeServiceKey(process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY);
 
 function assertEnv() {
   if (!SHEET_ID || !SERVICE_EMAIL || !SERVICE_KEY) {
