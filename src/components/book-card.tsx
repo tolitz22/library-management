@@ -23,16 +23,16 @@ export function BookCard({
 
   return (
     <article
-      className="book-card brutal-card relative overflow-hidden hover:rotate-[-0.5deg]"
+      className="book-card brutal-card relative overflow-hidden p-3 hover:rotate-[-0.5deg] sm:p-4"
       style={{ background: "var(--muted-surface)", color: "var(--fg)" }}
     >
-      <div className="relative mb-3 aspect-[3/4] overflow-hidden rounded-xl border-[2px]" style={{ borderColor: "var(--border)" }}>
+      <div className="relative mb-2 aspect-[4/5] overflow-hidden rounded-xl border-[2px] sm:mb-3 sm:aspect-[3/4]" style={{ borderColor: "var(--border)" }}>
         <Image src={book.coverUrl} alt={book.title} fill className="object-cover" />
       </div>
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>
-          <h3 className="line-clamp-1 font-bold">{book.title}</h3>
-          <p className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 75%, transparent)" }}>
+          <h3 className="line-clamp-2 text-sm font-bold leading-snug sm:line-clamp-1 sm:text-base">{book.title}</h3>
+          <p className="text-xs sm:text-sm" style={{ color: "color-mix(in srgb, var(--fg) 75%, transparent)" }}>
             {book.author}
           </p>
         </div>
@@ -43,7 +43,7 @@ export function BookCard({
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </div>
-      <div className="mb-3 space-y-1">
+      <div className="mb-2 space-y-1 sm:mb-3">
         <div className="flex justify-between text-xs font-medium">
           <span>Progress</span>
           <span>{progress}%</span>
@@ -77,7 +77,7 @@ export function BookCard({
         </div>
       ) : null}
 
-      <Link href={`/library/${book.id}`} onClick={() => onOpenBook?.(book.id)} className="brutal-btn w-full text-sm">
+      <Link href={`/library/${book.id}`} onClick={() => onOpenBook?.(book.id)} className="brutal-btn h-10 w-full text-sm sm:h-11">
         Open book
       </Link>
     </article>
